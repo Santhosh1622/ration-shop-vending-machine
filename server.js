@@ -90,14 +90,26 @@ app.post("/send-otp", async (req, res) => {
 app.post("/verify-otp", async (req, res) => {
     try {
         const { mobile, otp } = req.body;
+        console.log(`[VERIFY] Try: ${mobile} | Code: ${otp}`);
         const stored = await Otp.findOne({ mobile });
-        if (stored && stored.otp === otp) {
+        
+        if (stored && stored.otp.trim() === otp.trim()) {
             await Otp.deleteOne({ mobile });
             const user = await User.findOne({ phone: mobile });
-            return res.json({ user: { username: user.username, phone: user.phone, profileImage: user.profileImage } });
+            
+            if (user) {
+                return res.json({ user: { username: user.username, phone: user.phone, profileImage: user.profileImage } });
+            } else {
+                // Return a temporary user object for login success even if not in DB
+                return res.json({ user: { username: "Guest User", phone: mobile, profileImage: "" } });
+            }
         }
+        console.log(`[VERIFY] Failed: ${mobile} | Stored: ${stored ? stored.otp : "None"}`);
         res.status(400).json({ message: "Invalid" });
-    } catch (err) { res.status(500).json({ message: "Error" }); }
+    } catch (err) { 
+        console.error("[VERIFY] Error:", err);
+        res.status(500).json({ message: "Error" }); 
+    }
 });
 
 // ─────────────────── RVSM DATA APIs ───────────────────
