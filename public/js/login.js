@@ -89,8 +89,12 @@ async function requestMainLoginOTP() {
 
         if (res.ok) {
             const otpCode = data.otp || "123456";
+            const userName = data.username || "User";
+            const waMsg = `Hello Admin! I am ${userName}. My RVSM Login Verification code is : ${otpCode}. (Phone: ${phone})`;
+            const waUrl = `https://wa.me/919361892848?text=${encodeURIComponent(waMsg)}`;
+
             if (msgEl) {
-                msgEl.innerHTML = `Code generated! <small style="color:var(--warning);">Valid for 5 minutes</small>`;
+                msgEl.innerHTML = `Code generated! <a href="${waUrl}" target="_blank" style="color:var(--accent); text-decoration:underline; font-weight:600;">Open WhatsApp to get code</a><br><small style="color:var(--warning);">Valid for 5 minutes</small>`;
                 msgEl.style.color = "var(--success)";
             }
 
