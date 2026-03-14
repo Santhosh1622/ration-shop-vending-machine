@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Create Account — RVSM</title>
+    <meta name="description" content="Create your RVSM account" />
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>" />
+</head>
+
+<body>
+    <div class="login-page">
+        <div class="login-card" id="loginCard" style="max-width: 480px;">
+
+            <!-- Brand -->
+            <div class="login-brand">
+                <div class="logo-icon" style="border-radius: 50%; width: 64px; height: 64px;">RV</div>
+                <h1>RVSM</h1>
+                <p>Create your account</p>
+            </div>
+
+            <!-- Signup Form -->
+            <div id="signupForm">
+                <!-- Profile Photo -->
+                <div style="text-align:center; margin-bottom: 20px;">
+                    <div id="profilePreview" onclick="document.getElementById('profileImageInput').click()" style="width:80px; height:80px; border-radius:50%; margin:0 auto 10px; background:var(--bg-glass); border:2px dashed var(--accent); display:flex; align-items:center; justify-content:center; cursor:pointer; overflow:hidden; transition: all 0.3s ease;">
+                        <span id="profilePlaceholder" style="font-size:2rem; color:var(--text-muted);">📷</span>
+                        <img id="profileImg" src="" alt="" style="width:100%; height:100%; object-fit:cover; display:none;" />
+                    </div>
+                    <input type="file" id="profileImageInput" accept="image/*" onchange="handleProfileImage(event)" style="display:none;" />
+                    <small style="color:var(--text-muted); font-size:0.75rem;">Tap to add photo (optional)</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="signupUsername">User Name <span style="color:var(--warning);">*</span></label>
+                    <input type="text" id="signupUsername" class="form-input" placeholder="Enter your name" required />
+                </div>
+
+                <div class="form-group">
+                    <label for="signupPhone">Phone Number <span style="color:var(--warning);">*</span></label>
+                    <div class="input-wrapper">
+                        <span class="prefix">+91</span>
+                        <input type="tel" id="signupPhone" class="form-input" placeholder="Enter 10 digit number" maxlength="10" inputmode="numeric" required />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="signupPassword">Password <span style="color:var(--warning);">*</span></label>
+                    <div style="position:relative;">
+                        <input type="password" id="signupPassword" class="form-input" placeholder="Create a password" required />
+                        <button type="button" onclick="togglePasswordVisibility('signupPassword', this)" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:1.1rem; color:var(--text-muted);">👁️</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="signupConfirmPassword">Confirm Password <span style="color:var(--warning);">*</span></label>
+                    <div style="position:relative;">
+                        <input type="password" id="signupConfirmPassword" class="form-input" placeholder="Confirm your password" required />
+                        <button type="button" onclick="togglePasswordVisibility('signupConfirmPassword', this)" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:1.1rem; color:var(--text-muted);">👁️</button>
+                    </div>
+                </div>
+
+                <button class="btn-primary" id="signupBtn" onclick="handleSignup()">
+                    <span class="btn-text">Create Account</span>
+                    <div class="spinner"></div>
+                </button>
+
+                <div style="text-align:center; margin-top: 20px;">
+                    <p style="font-size:0.85rem; color:var(--text-secondary);">Already have an account? <a href="/login.html" style="color:var(--accent-hover); text-decoration:none; font-weight:600;">Login</a></p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Toast notification -->
+    <div class="toast" id="toast">
+        <span class="toast-icon" id="toastIcon"></span>
+        <span id="toastMsg"></span>
+    </div>
+
+    <script src="/js/login.js"></script>
+</body>
+
+</html>

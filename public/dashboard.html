@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard — RVSM</title>
+    <meta name="description" content="RVSM dashboard portal" />
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>" />
+    <!-- PDF & QR Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+
+<body>
+    <div class="dashboard-page">
+
+        <!-- Sidebar overlay (mobile) -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-icon">RV</div>
+                <h2>RVSM</h2>
+            </div>
+
+            <ul class="nav-list" id="navList">
+                <li class="nav-item">
+                    <button class="nav-link active" onclick="switchTab('chamber-view', this)">
+                        <span class="nav-icon">🏭</span> Chamber Availability
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" onclick="switchTab('allocated-view', this)">
+                        <span class="nav-icon">📦</span> Allocated Grains
+                    </button>
+                </li>
+                <li class="nav-item admin-only">
+                    <button class="nav-link" onclick="switchTab('ration-registration', this)">
+                        <span class="nav-icon">📝</span> Ration Registration
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" onclick="switchTab('complaints-view', this)">
+                        <span class="nav-icon">🎧</span> Complaints & Helpline
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" onclick="switchTab('smartcard-view', this)">
+                        <span class="nav-icon">💳</span> Download E-Smart Card
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" onclick="switchTab('profile-view', this)">
+                        <span class="nav-icon">👤</span> Edit User Info
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" onclick="switchTab('programmer-view', this)">
+                        <span class="nav-icon">💻</span> Programmer Portal
+                    </button>
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <!-- System Loader -->
+                <div class="loader-container">
+                    <div class="loader-header">
+                        <span class="loader-title">System Status</span>
+                        <span class="loader-pct">75%</span>
+                    </div>
+                    <div class="loader-bar">
+                        <div class="loader-progress"></div>
+                    </div>
+                </div>
+
+                <button class="nav-link" id="adminLoginBtn" onclick="showAdminLogin()" style="margin-bottom: 8px; color: var(--warning);">
+                    <span class="nav-icon">🛡️</span> Admin Login
+                </button>
+                <button class="nav-link" id="logoutBtn" onclick="handleLogout()">
+                    <span class="nav-icon">🚪</span> Logout
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main content -->
+        <main class="main-content">
+            <div class="top-bar">
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+                    <h1 id="pageTitle">Chamber Availability</h1>
+                </div>
+                <div style="display:flex; align-items:center; gap:20px;">
+                    <a href="/user-website/index.html" target="_blank" class="btn-outline" style="text-decoration:none; padding: 6px 15px; font-size: 0.85rem; border-radius: 20px; display:flex; align-items:center; gap:6px;">
+                        <span>📱</span> User Portal
+                    </a>
+                    <div class="user-badge">
+                        <div class="avatar" id="avatarInitial" style="overflow:hidden;">U</div>
+                        <img id="avatarImage" src="" alt="" style="width:36px; height:36px; border-radius:50%; object-fit:cover; display:none; border: 2px solid var(--accent);" />
+                        <span class="user-phone" id="userName">User</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Views Container -->
+            <div id="viewsContainer">
+                <!-- 1. Chamber Availability -->
+                <section id="chamber-view" class="dashboard-view active-view">
+                    <h2 class="view-title" style="margin-bottom: 30px; display:flex; align-items:center; gap:10px;">Availability of grains in chamber (Live) <span class="live-dot"></span></h2>
+                    <div class="chamber-grid">
+                        <div class="chamber-item">
+                            <div class="hexagon">
+                                <img src="/images/rice.png" alt="Rice" class="grain-img">
+                                <span class="grain-label">RICE</span>
+                            </div>
+                            <div class="chamber-weight">
+                                <span class="chamber-weight-text" data-chamber="rice">45 KG</span>
+                                <input type="text" class="edit-input" value="45 KG" onchange="saveChamberValue('rice', this.value)">
+                            </div>
+                        </div>
+                        <div class="chamber-item">
+                            <div class="hexagon">
+                                <img src="/images/wheat.png" alt="Wheat" class="grain-img">
+                                <span class="grain-label">WHEAT</span>
+                            </div>
+                            <div class="chamber-weight">
+                                <span class="chamber-weight-text" data-chamber="wheat">50 KG</span>
+                                <input type="text" class="edit-input" value="50 KG" onchange="saveChamberValue('wheat', this.value)">
+                            </div>
+                        </div>
+                        <div class="chamber-item">
+                            <div class="hexagon">
+                                <img src="/images/sugar.png" alt="Sugar" class="grain-img">
+                                <span class="grain-label">SUGAR</span>
+                            </div>
+                            <div class="chamber-weight">
+                                <span class="chamber-weight-text" data-chamber="sugar">60 KG</span>
+                                <input type="text" class="edit-input" value="60 KG" onchange="saveChamberValue('sugar', this.value)">
+                            </div>
+                    </div>
+
+                    <!-- Admin Stock Entry Section (Added below Chamber Availability) -->
+                    <div class="admin-only" style="margin-top: 40px;">
+                        <h2 class="view-title" style="margin-bottom: 20px;">Daily Stock Entry Log</h2>
+                        
+                        <!-- Entry Form -->
+                        <div class="card-box mb-4" style="background: var(--bg-glass);">
+                            <div style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+                                <div style="flex: 1; min-width: 120px;">
+                                    <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 5px; display: block;">Rice (KG)</label>
+                                    <input type="number" id="entryRice" class="form-input" style="padding: 10px;" placeholder="e.g. 50">
+                                </div>
+                                <div style="flex: 1; min-width: 120px;">
+                                    <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 5px; display: block;">Wheat (KG)</label>
+                                    <input type="number" id="entryWheat" class="form-input" style="padding: 10px;" placeholder="e.g. 40">
+                                </div>
+                                <div style="flex: 1; min-width: 120px;">
+                                    <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 5px; display: block;">Sugar (KG)</label>
+                                    <input type="number" id="entrySugar" class="form-input" style="padding: 10px;" placeholder="e.g. 30">
+                                </div>
+                                <div>
+                                    <button class="btn-primary" onclick="addStockEntry()" style="padding: 10px 24px; width: auto; font-size: 0.9rem;">Add Entry</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- History Table -->
+                        <div class="table-container">
+                            <table class="grains-table" id="stockHistoryTable">
+                                <thead>
+                                    <tr>
+                                        <th>Date & Time</th>
+                                        <th>Rice Added</th>
+                                        <th>Wheat Added</th>
+                                        <th>Sugar Added</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- User Collections Log Section -->
+                    <div class="admin-only" style="margin-top: 50px; padding-top: 30px; border-top: 1px solid var(--border-glass);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+                            <h2 class="view-title" style="margin-bottom:0;">Live User Collections (Today)</h2>
+                            <button class="btn-primary" onclick="downloadCollectionExcel()" style="padding: 8px 16px; font-size: 0.85rem; background: var(--gradient-1); border:none; display:flex; align-items:center; gap:8px;">
+                                <span>📊</span> Download Excel
+                            </button>
+                        </div>
+                        
+                        <div class="table-container">
+                            <table class="grains-table" id="userCollectionTable">
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>Name</th>
+                                        <th>Ration ID</th>
+                                        <th>Rice</th>
+                                        <th>Wheat</th>
+                                        <th>Sugar</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Populated dynamically by JS -->
+                                    <tr><td colspan="6" style="text-align:center; padding: 20px; color: var(--text-muted);">Processing...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. Allocated Grains -->
+                <section id="allocated-view" class="dashboard-view" style="display:none;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+                        <h2 class="view-title" style="margin-bottom:0;">Allocated & Pending Grains</h2>
+                        <button class="btn-outline admin-only" onclick="saveTableData()" style="padding: 6px 15px; font-size: 0.8rem; border-color: var(--warning); color: var(--warning);">Save Changes</button>
+                    </div>
+                    <div class="table-container">
+                        <table class="grains-table">
+                            <thead>
+                                <tr>
+                                    <th>Status</th>
+                                    <th>Rice</th>
+                                    <th>Wheat</th>
+                                    <th>Sugar</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="font-bold">Allocated</td>
+                                    <td class="editable-cell">20 Kg</td>
+                                    <td class="editable-cell">15 Kg</td>
+                                    <td class="editable-cell">10 Kg</td>
+                                </tr>
+                                <tr>
+                                    <td class="font-bold border-bottom">Collected</td>
+                                    <td class="editable-cell border-bottom">15 Kg</td>
+                                    <td class="editable-cell border-bottom">5 Kg</td>
+                                    <td class="editable-cell border-bottom">5 Kg</td>
+                                </tr>
+                                <tr>
+                                    <td class="font-bold">Pending</td>
+                                    <td class="editable-cell">5 Kg</td>
+                                    <td class="editable-cell">10 Kg</td>
+                                    <td class="editable-cell">5 Kg</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="status-legend card-box" id="grainsStatusLegend">
+                        <h3 style="margin-bottom: 15px;">STATUS</h3>
+                        <div class="legend-item" id="statusCollected"><span class="circle full"></span> - Collected</div>
+                        <div class="legend-item" id="statusPartial"><span class="circle partial"></span> - Partially Collected</div>
+                        <div class="legend-item" id="statusNotCollected"><span class="circle empty"></span> - Not Collected</div>
+                    </div>
+                </section>
+
+                <!-- 2.5 Ration Registration (Admin Only) -->
+                <section id="ration-registration" class="dashboard-view fadeIn" style="display:none;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+                        <h2 class="view-title" style="margin-bottom:0;">Ration Card Registration</h2>
+                        <div class="admin-badge">ADMIN CONTROL</div>
+                    </div>
+                    <div class="card-box">
+                        <div class="registration-form grid-2">
+                            <div class="form-group">
+                                <label style="display:block; margin-bottom:8px; font-weight:600; color:var(--text-secondary);">Head of Family Name</label>
+                                <input type="text" id="reg_name" class="form-input" placeholder="Enter Full Name">
+                            </div>
+                            <div class="form-group">
+                                <label style="display:block; margin-bottom:8px; font-weight:600; color:var(--text-secondary);">Husband / Father Name</label>
+                                <input type="text" id="reg_parent" class="form-input" placeholder="Enter Parent Name">
+                            </div>
+                            <div class="form-group">
+                                <label style="display:block; margin-bottom:8px; font-weight:600; color:var(--text-secondary);">Date of Birth</label>
+                                <input type="date" id="reg_dob" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label style="display:block; margin-bottom:8px; font-weight:600; color:var(--text-secondary);">Mobile Number (Login ID)</label>
+                                <input type="tel" id="reg_mobile" class="form-input" placeholder="e.g. 9876543210">
+                            </div>
+                            <div class="form-group full-width">
+                                <label style="display:block; margin-bottom:8px; font-weight:600; color:var(--text-secondary);">Address</label>
+                                <textarea id="reg_address" class="form-input" style="height: 80px; resize: none; padding-top:12px;" placeholder="Full Address"></textarea>
+                            </div>
+                            
+                            <div class="form-group full-width">
+                                <label style="display:block; margin-bottom:8px; font-weight:600; color:var(--text-secondary);">Family Members (Comma separated)</label>
+                                <input type="text" id="reg_members" class="form-input" placeholder="Member 1, Member 2, Member 3">
+                            </div>
+
+                            <div class="form-group">
+                                <label style="display:block; margin-bottom:8px; font-weight:600; color:var(--text-secondary);">Rice Allocation (KG)</label>
+                                <input type="number" id="reg_rice" class="form-input" value="20" step="0.1">
+                            </div>
+                            <div class="form-group">
+                                <label style="display:block; margin-bottom:8px; font-weight:600; color:var(--text-secondary);">Wheat Allocation (KG)</label>
+                                <input type="number" id="reg_wheat" class="form-input" value="15" step="0.1">
+                            </div>
+                            <div class="form-group">
+                                <label style="display:block; margin-bottom:8px; font-weight:600; color:var(--text-secondary);">Sugar Allocation (KG)</label>
+                                <input type="number" id="reg_sugar" class="form-input" value="10" step="0.1">
+                            </div>
+                        </div>
+                        <div style="text-align: center; margin-top: 30px;">
+                            <button class="btn-primary" onclick="createRationCard()" style="width: auto; padding: 12px 40px;">✅ Register & Generate Card</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 3. Complaints & Helpline -->
+                <section id="complaints-view" class="dashboard-view" style="display:none;">
+                    <div class="top-actions">
+                        <button class="btn-outline">Select & Raise ▼</button>
+                        <button class="btn-outline">📞 Helpline</button>
+                    </div>
+                    
+                    <div class="card-box mt-3">
+                        <ul class="complaints-list">
+                            <li>Monthly quota not updated correctly</li>
+                            <li>Pending quantity showing wrong value</li>
+                            <li>Already collected grains not updated in app</li>
+                            <li>App showing collected even though not collected</li>
+                            <li>Grain not dispensed after payment</li>
+                            <li>Grain quantity dispensed is less than expected</li>
+                            <li>Grain stuck in dispenser</li>
+                            <li>Machine stopped during dispensing</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- 4. E-Smart Card -->
+                <!-- 4. E-Smart Card -->
+                <section id="smartcard-view" class="dashboard-view" style="display:none;">
+                    <h2 class="view-title" style="text-align:center; margin-bottom: 24px;">Download E-Smart Card</h2>
+                    
+                    <div id="noCardMsg" class="card-box" style="text-align:center; padding: 40px; display: none;">
+                        <p style="color: var(--text-muted); font-size: 1.1rem; margin-bottom: 20px;">No ration card linked to your mobile number.</p>
+                        <p style="font-size: 0.9rem; margin-bottom: 25px;">Please contact the administrator to register your ration profile.</p>
+                        <button class="btn-outline admin-only" onclick="switchTab('ration-registration', document.querySelector('[onclick*=\'ration-registration\']'))" style="margin-top: 20px; border-color: var(--warning); color: var(--warning);">Register Ration Card</button>
+                    </div>
+                    
+                    <div id="cardDetailsContainer" style="display:none;">
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 30px;">
+                            <div id="visualCardPreview" style="transform: scale(1.1); margin: 20px 0;">
+                                <!-- Rendered dynamically by JS -->
+                            </div>
+                            
+                            <div style="display: flex; flex-direction: column; gap: 15px; width: 100%; max-width: 400px; margin-top: 10px;">
+                                <button class="btn-primary" style="padding: 15px; display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 1.1rem; width: 100%; cursor: pointer;" onclick="downloadSmartCardImage()">
+                                    <span>🖼️</span> Download E-Smart Card (Image)
+                                </button>
+                                <button class="btn-outline" style="padding: 12px; display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 1rem; width: 100%; border-color: var(--accent); color: var(--accent); cursor: pointer;" onclick="downloadSmartCardPDF()">
+                                    <span>📄</span> Download Official PDF
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Hidden Card Template for PDF Generation -->
+                <div id="smartCardTemplate" style="position: absolute; left: -5000px; top: 0; visibility: hidden; pointer-events: none;">
+                    <div id="smartCardDesign" style="width: 500px; padding: 25px; background: #f1f8e9; border: 10px solid #a5d6a7; border-radius: 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; position: relative; box-sizing: border-box;">
+                        <div style="border: 2px solid #2e7d32; padding: 15px; border-radius: 8px; height: 100%; box-sizing: border-box; background: white;">
+                            <div style="text-align: center; margin-bottom: 18px;">
+                                <h3 style="margin: 0; color: #2e7d32; font-size: 1.3rem; letter-spacing: 1px; font-weight: 800;">GOVERNMENT OF TAMILNADU</h3>
+                                <p style="margin: 5px 0 0 0; font-size: 0.8rem; color: #333; font-weight: 700;">CIVIL SUPPLIES & CONSUMER PROTECTION DEPARTMENT</p>
+                            </div>
+                            
+                            <div style="background: #2e7d32; color: white; text-align: center; padding: 6px; font-weight: 800; font-size: 1rem; margin-bottom: 20px; letter-spacing: 3px; border-radius: 4px;">
+                                FAMILY CARD
+                            </div>
+                            
+                            <div style="display: flex; gap: 20px;">
+                                <div style="width: 100px; height: 125px; background: #eee; border: 1px solid #aaa; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; color: #888; flex-shrink: 0; border-radius: 4px;">
+                                    Photo
+                                </div>
+                                <div style="font-size: 0.9rem; color: #1a1a1a; line-height: 1.6; flex-grow: 1;">
+                                    <p style="margin: 0;"><strong>Head of Family:</strong> <span id="card_head" style="color: #2e7d32; font-weight: 700;">...</span></p>
+                                    <p style="margin: 5px 0 0 0;"><strong>Father/Spouse:</strong> <span id="card_parent">...</span></p>
+                                    <p style="margin: 5px 0 0 0;"><strong>Date of Birth:</strong> <span id="card_dob">...</span></p>
+                                    <p style="margin: 5px 0 0 0;"><strong>Address:</strong> <span id="card_addr" style="font-size: 0.8rem;">...</span></p>
+                                </div>
+                            </div>
+                            
+                            <div style="background: #2e7d32; color: white; text-align: center; padding: 5px; font-weight: 800; font-size: 0.85rem; margin-top: 20px; margin-bottom: 12px; border-radius: 4px;">
+                                Public Distribution System E-Service
+                            </div>
+                            
+                            <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                                <div style="font-size: 0.85rem; color: #333; flex-grow: 1;">
+                                    <ul id="card_members_list" style="margin: 0; padding-left: 20px; font-weight: 500;">
+                                        <!-- Dynamically populated -->
+                                    </ul>
+                                </div>
+                                <div id="card_qrcode" style="width: 85px; height: 85px; background: white; border: 1px solid #ddd; flex-shrink: 0; padding: 5px; display: flex; align-items: center; justify-content: center;"></div>
+                            </div>
+                            
+                            <div style="margin-top: 15px; font-size: 0.8rem; font-weight: 800; color: #2e7d32; text-align: right; border-top: 1px dashed #2e7d32; padding-top: 5px;">
+                                Ration ID: <span id="card_ration_id">...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. Edit Profile -->
+                <section id="profile-view" class="dashboard-view" style="display:none;">
+                    <h2 class="view-title" style="text-align:center; margin-bottom: 24px;">EDIT MY PROFILE</h2>
+                    <div class="form-container">
+                        <div class="form-group mb-2">
+                            <input type="text" class="form-input" placeholder="User name" />
+                        </div>
+                        <div class="form-group mb-0">
+                            <input type="tel" class="form-input" placeholder="mobile number" />
+                            <div style="text-align:left; font-size:0.8rem; color:var(--text-muted); margin: 5px 0 10px 5px; cursor:pointer;">send otp</div>
+                        </div>
+                        <div class="form-group mb-2">
+                            <input type="text" class="form-input" placeholder="OTP" />
+                        </div>
+                        <div class="form-group mb-4">
+                            <input type="text" class="form-input" placeholder="smart card ID number" />
+                        </div>
+                        
+                        <div class="form-group card-box" style="padding:15px;">
+                            <label style="display:block; margin-bottom:10px; font-size:0.9rem;">add family members(age above 18)</label>
+                            <input type="text" class="form-input-minimal" placeholder="+ member 1" />
+                            <input type="text" class="form-input-minimal" placeholder="+ member 2" />
+                            <input type="text" class="form-input-minimal" placeholder="+ member 3" />
+                        </div>
+
+                        <div style="text-align:right; margin-top:20px;">
+                            <button class="btn-outline" style="padding: 10px 40px; border-radius: 20px;">submit</button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Programmer Portal (Gated by WhatsApp OTP) -->
+            <div id="programmer-view" class="dashboard-view fadeIn" style="display: none;">
+                <!-- 1. Gated Login Screen -->
+                <div id="programmer-login-screen" class="programmer-view-content">
+                    <div class="programmer-card" style="max-width: 450px; margin: 0 auto;">
+                        <div class="programmer-hero" style="margin-bottom: 30px;">
+                            <div class="logo-icon">PV</div>
+                            <h2>Programmer Access</h2>
+                            <p>Verify your identity via WhatsApp OTP</p>
+                        </div>
+
+                        <div id="prog_login_step1" class="form-container" style="padding: 0;">
+                            <div class="form-group mb-3">
+                                <label style="display:block; margin-bottom:8px; font-size:0.9rem; color:var(--text-secondary); text-align:left;">Phone Number</label>
+                                <input type="tel" id="prog_auth_mobile" class="form-input" placeholder="e.g. 9876543210" style="background:var(--bg-glass);">
+                            </div>
+                            <button class="btn-primary" onclick="requestWhatsAppOTP()" style="width:100%; margin-top:10px;">
+                                <span style="margin-right:8px;">📱</span> Send WhatsApp OTP
+                            </button>
+                        </div>
+
+                        <div id="prog_login_step2" class="form-container" style="padding: 0; display: none;">
+                            <div class="form-group mb-3">
+                                <label style="display:block; margin-bottom:8px; font-size:0.9rem; color:var(--text-secondary); text-align:left;">Enter Authentication Code</label>
+                                <input type="text" id="prog_auth_otp" class="form-input" placeholder="6-digit code" style="background:var(--bg-glass); text-align:center; font-size:1.2rem; letter-spacing:4px;">
+                            </div>
+                            <button class="btn-primary" onclick="verifyProgrammerAccess()" style="width:100%; margin-top:10px;">
+                                Unlock Portal
+                            </button>
+                            <div style="margin-top:15px; font-size:0.8rem; color:var(--text-muted); cursor:pointer;" onclick="resetProgrammerLogin()">Change phone number</div>
+                        </div>
+
+                        <div id="prog_auth_msg" style="margin-top: 20px; font-weight: 600; font-size: 0.9rem; text-align:center;"></div>
+                    </div>
+                </div>
+
+                <!-- 2. Main Portal Content (Hidden by default) -->
+                <div id="programmer-main-content" class="programmer-view-content" style="display: none;">
+                    <div class="programmer-card">
+                        <div style="text-align: right; margin-bottom: -20px;">
+                            <button class="btn-outline" style="padding:5px 15px; font-size:0.8rem; border-radius:15px;" onclick="logoutProgrammer()">🔒 Lock Portal</button>
+                        </div>
+                        
+                        <div class="programmer-hero">
+                            <div class="logo-icon">PV</div>
+                            <h2>Programmer Portal</h2>
+                            <p>Advanced Integration Hub (ESP32 Framework)</p>
+                        </div>
+
+                        <div class="tech-stack">
+                            <div class="tech-badge"><span>🔌</span> ESP32-S</div>
+                            <div class="tech-badge"><span>⚡</span> Arduino V2.0</div>
+                            <div class="tech-badge"><span>📡</span> Serial Auth</div>
+                            <div class="tech-badge"><span>🛠️</span> Esptool Py</div>
+                        </div>
+
+                        <div style="margin: 30px 0; color: var(--text-secondary); line-height: 1.6; background: var(--bg-glass); padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border-glass);">
+                            <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 10px;">📂 Integrated Environment Path:</div>
+                            <code style="display: block; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 4px; color: var(--accent-hover); font-family: 'Courier New', Courier, monospace;">C:\Users\Sandy\VM\Programer website</code>
+                        </div>
+
+                        <div class="programmer-actions" style="margin-top: 40px; border-top: 1px solid var(--border-glass); padding-top: 30px;">
+                            <button class="btn-primary" style="width:auto; padding:12px 30px;" onclick="showToast('Initializing Serial Interface...', 'info')">Connect Hardware</button>
+                            <button class="btn-outline" onclick="showToast('Accessing technical documentation...', 'info')">View Platform Specs</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Admin Login Modal -->
+    <div id="adminModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2>Admin Login</h2>
+                <button class="close-btn" onclick="closeAdminModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <input type="text" id="adminUser" class="form-input" placeholder="Admin Username">
+                </div>
+                <div class="form-group">
+                    <input type="password" id="adminPass" class="form-input" placeholder="Password">
+                </div>
+                <button class="btn-primary" onclick="processAdminLogin()">Login as Admin</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast" class="toast">
+        <div id="toastIcon"></div>
+        <div id="toastMsg"></div>
+    </div>
+
+    <script src="/js/dashboard.js"></script>
+</body>
+
+</html>

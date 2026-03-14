@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login — RVSM</title>
+    <meta name="description" content="Secure login for RVSM portal" />
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>" />
+</head>
+
+<body>
+    <div class="login-page">
+        <div class="login-card" id="loginCard">
+
+            <!-- Brand -->
+            <div class="login-brand">
+                <div class="logo-icon" style="border-radius: 50%; width: 64px; height: 64px;">RV</div>
+                <h1>RVSM</h1>
+                <p>Sign in with your credentials</p>
+            </div>
+
+            <!-- Login Form (Standard + OTP Toggle) -->
+            <div id="loginForm">
+                <!-- Standard Credentials Section -->
+                <div id="credentials-section">
+                    <div class="form-group">
+                        <label for="loginUsername">Username</label>
+                        <input type="text" id="loginUsername" class="form-input" placeholder="Enter your username" autocomplete="username" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="loginPassword">Password</label>
+                        <div style="position:relative;">
+                            <input type="password" id="loginPassword" class="form-input" placeholder="Enter your password" autocomplete="current-password" />
+                            <button type="button" id="togglePassword" onclick="togglePasswordVisibility('loginPassword', this)" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:1.1rem; color:var(--text-muted);">👁️</button>
+                        </div>
+                    </div>
+
+                    <button class="btn-primary" id="loginBtn" onclick="handleLogin()">
+                        <span class="btn-text">Sign In</span>
+                    </button>
+
+                    <div style="text-align:center; margin-top: 15px;">
+                        <span style="color:var(--text-muted); font-size:0.8rem; cursor:pointer;" onclick="toggleLoginMode('otp')">Sign in with WhatsApp OTP</span>
+                    </div>
+                </div>
+
+                <!-- OTP Section (Hidden by default) -->
+                <div id="otp-section" style="display: none;">
+                    <div class="form-group">
+                        <label for="loginPhone">Phone Number</label>
+                        <input type="tel" id="loginPhone" class="form-input" placeholder="10-digit number" style="margin-bottom: 15px;" />
+                        <button class="btn-primary" id="sendOtpBtn" onclick="requestMainLoginOTP()" style="width:100%;">
+                            <span class="btn-text">📱 Send WhatsApp OTP</span>
+                        </button>
+                    </div>
+
+                    <div id="otp-verify-group" style="display: none; margin-top: 20px;">
+                        <div class="form-group">
+                            <label for="loginOtp">Verification Code</label>
+                            <input type="text" id="loginOtp" class="form-input" placeholder="6-digit code" style="text-align:center; letter-spacing:4px; font-size:1.2rem;" />
+                        </div>
+                        <button class="btn-primary" id="verifyOtpBtn" onclick="verifyMainLoginOTP()" style="width:100%;">
+                            <span class="btn-text">Unlock Account</span>
+                        </button>
+                    </div>
+
+                    <div id="otp-status-msg" style="margin-top: 15px; font-size: 0.85rem; text-align:center;"></div>
+
+                    <div style="text-align:center; margin-top: 20px;">
+                        <span style="color:var(--text-muted); font-size:0.8rem; cursor:pointer;" onclick="toggleLoginMode('password')">Back to Password Login</span>
+                    </div>
+                </div>
+
+                <div style="text-align:center; margin-top: 25px; border-top: 1px solid var(--border-glass); padding-top: 20px;">
+                    <a href="/signup.html" style="color:var(--accent-hover); text-decoration:none; font-size:0.9rem; font-weight:600;">Create new account</a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Toast notification -->
+    <div class="toast" id="toast">
+        <span class="toast-icon" id="toastIcon"></span>
+        <span id="toastMsg"></span>
+    </div>
+
+    <script src="/js/login.js"></script>
+</body>
+
+</html>

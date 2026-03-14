@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Smart Ration Distribution</title>
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+
+:root {
+    --bg-primary: #f8fafc;
+    --bg-card: rgba(255, 255, 255, 0.95);
+    --bg-glass: rgba(255, 255, 255, 0.6);
+    --border-glass: rgba(212, 175, 55, 0.3);
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --accent: #d4af37;
+    --accent-hover: #b8860b;
+    --accent-glow: rgba(212, 175, 55, 0.35);
+    --gradient-1: linear-gradient(135deg, #dfc05a 0%, #d4af37 50%, #b8860b 100%);
+    --shadow-md: 0 4px 15px rgba(0,0,0,0.08);
+    --radius-md: 12px;
+}
+
+* { box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+body {
+    background: var(--bg-primary);
+    background-image: radial-gradient(ellipse at 50% 0%, rgba(212,175,55,0.08) 0%, transparent 60%);
+    color: var(--text-primary);
+    text-align: center;
+    margin: 0;
+    min-height: 100vh;
+    padding-bottom: 40px;
+}
+
+h2 {
+    background: var(--gradient-1);
+    color: white;
+    padding: 20px;
+    margin: 0 0 30px 0;
+    font-weight: 800;
+    font-size: 1.6rem;
+    letter-spacing: -0.02em;
+    box-shadow: var(--shadow-md);
+}
+
+#govLogo {
+    display: none; /* Hide broken image for safe keeping, replace with pure CSS logo */
+}
+
+.logo-icon {
+    width: 72px;
+    height: 72px;
+    background: var(--gradient-1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: 800;
+    color: #fff;
+    margin: 0 auto 20px auto;
+    box-shadow: 0 4px 20px var(--accent-glow);
+}
+
+.chambers-container {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin: 20px auto;
+    padding: 0 20px;
+    position: relative;
+    z-index: 10;
+}
+
+.chamber-card {
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-glass);
+    padding: 15px 25px;
+    border-radius: var(--radius-md);
+    text-align: center;
+    box-shadow: var(--shadow-md);
+    min-width: 140px;
+}
+
+.chamber-card h3 {
+    margin: 0 0 5px 0;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.chamber-level {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--accent-hover);
+}
+
+button {
+    background: var(--gradient-1);
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 30px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 15px var(--accent-glow);
+    transition: all 0.2s ease;
+    margin: 20px auto;
+    display: inline-block;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px var(--accent-glow);
+}
+
+button:active { transform: translateY(0); }
+
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 40px;
+    margin: 40px auto;
+    flex-wrap: wrap;
+    max-width: 900px;
+    padding: 0 20px;
+}
+
+#reader {
+    width: 100%;
+    max-width: 400px;
+    min-height: 300px;
+    background: var(--bg-card);
+    border: 2px dashed var(--accent);
+    border-radius: var(--radius-md);
+    padding: 15px;
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+#reader::before {
+    content: '📷 Please allow camera access...';
+    color: var(--text-muted);
+    font-weight: 600;
+    position: absolute;
+    z-index: 0;
+}
+
+#reader video { 
+    border-radius: 8px; 
+    z-index: 1;
+    position: relative;
+}
+
+.details {
+    width: 100%;
+    max-width: 380px;
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    padding: 30px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-glass);
+    display: none;
+    text-align: left;
+    box-shadow: var(--shadow-md);
+    animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.details h3 {
+    margin: 0 0 20px 0;
+    font-size: 1.2rem;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-glass);
+    padding-bottom: 10px;
+}
+
+.details p {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    margin: 12px 0;
+    font-weight: 500;
+}
+
+.details p strong { color: var(--text-primary); }
+
+.status {
+    margin: 30px auto;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    background: var(--bg-glass);
+    display: inline-block;
+    padding: 15px 30px;
+    border-radius: 30px;
+    border: 1px solid var(--border-glass);
+    box-shadow: var(--shadow-md);
+    transition: all 0.3s ease;
+}
+
+/* --- Table & Legend Styles --- */
+.table-wrapper {
+    width: 100%;
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.table-header h2 {
+    margin: 0;
+    box-shadow: none;
+    background: transparent;
+    color: var(--text-primary);
+    padding: 0;
+    font-size: 1.4rem;
+}
+
+.pct-badge {
+    background: var(--gradient-1);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 1rem;
+    box-shadow: var(--shadow-md);
+}
+
+/* --- Premium Dispense Controls --- */
+.dispense-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.dispense-card {
+    background: var(--bg-glass);
+    border: 1px solid var(--border-glass);
+    padding: 15px;
+    border-radius: var(--radius-md);
+    text-align: center;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.dispense-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent);
+    box-shadow: 0 8px 20px rgba(212, 175, 55, 0.15);
+}
+
+.badge-available {
+    font-size: 0.75rem;
+    color: white;
+    background: #64748b;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.selection-input-wrapper {
+    width: 100%;
+    margin-top: 5px;
+}
+
+.selection-input-wrapper label {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.selection-input {
+    width: 100%;
+    padding: 8px;
+    border: none;
+    border-bottom: 2px solid var(--border-glass);
+    background: transparent;
+    color: var(--text-primary);
+    font-weight: 700;
+    font-size: 1.1rem;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.selection-input:focus {
+    outline: none;
+    border-bottom-color: var(--accent);
+    background: rgba(212, 175, 55, 0.05);
+}
+
+.selection-input:disabled {
+    opacity: 0.6;
+    border-bottom-color: #cbd5e1;
+}
+
+.details.premium {
+    max-width: 500px;
+}
+
+.simulation-panel {
+    max-width: 500px;
+    margin: 0 auto 30px auto;
+    padding: 20px;
+    background: var(--bg-glass);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-glass);
+    box-shadow: var(--shadow-md);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.sim-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.btn-reset {
+    padding: 10px 15px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    background: #64748b;
+    color: white;
+    border: none;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin: 0;
+}
+
+.btn-reset:hover {
+    opacity: 1;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.grains-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--bg-card);
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-glass);
+    text-align: center;
+}
+
+.grains-table th {
+    background: var(--bg-primary);
+    padding: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    border-bottom: 2px solid var(--border-glass);
+}
+
+.grains-table td {
+    padding: 15px;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-glass);
+}
+
+.grains-table th:not(:last-child), .grains-table td:not(:last-child) {
+    border-right: 1px solid var(--border-glass);
+}
+
+.font-bold { font-weight: 700; color: var(--text-primary); }
+.border-bottom { background: rgba(212, 175, 55, 0.03); }
+
+.status-legend {
+    background: var(--bg-card);
+    padding: 20px;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    border: 1px solid var(--border-glass);
+    border-top: none;
+    box-shadow: var(--shadow-md);
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: center;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.circle {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--text-primary);
+    display: inline-block;
+}
+
+.circle.full { background: var(--text-primary); }
+.circle.partial { background: #22c55e; border-color: #22c55e; }
+.circle.empty { background: transparent; }
+</style>
+</head>
+
+<body>
+
+<h2>SMART RATION DISTRIBUTION SYSTEM</h2>
+
+<div class="logo-icon">RV</div>
+
+<div class="chambers-container">
+    <div class="chamber-card">
+        <h3>Rice</h3>
+        <div id="riceLevel" class="chamber-level">--</div>
+    </div>
+    <div class="chamber-card">
+        <h3>Wheat</h3>
+        <div id="wheatLevel" class="chamber-level">--</div>
+    </div>
+    <div class="chamber-card">
+        <h3>Sugar</h3>
+        <div id="sugarLevel" class="chamber-level">--</div>
+    </div>
+</div>
+
+<button onclick="connectSerial()">Connect ESP32</button>
+
+<div class="container">
+
+<div id="reader"></div>
+
+<div class="details" id="userDetails">
+<h3>User Details</h3>
+<p id="name">👤 Name:</p>
+<p id="ration">🪪 Ration ID:</p>
+<div style="display:flex; justify-content:space-between; margin-top:15px; border-top: 1px solid var(--border-glass); padding-top:15px;">
+    <p id="rice" style="margin:0; font-size: 0.95rem;">🍚 Rice:</p>
+    <p id="wheat" style="margin:0; font-size: 0.95rem;">🌾 Wheat:</p>
+    <p id="sugar" style="margin:0; font-size: 0.95rem;">🧂 Sugar:</p>
+</div>
+</div>
+
+</div>
+
+<div class="simulation-panel">
+    <div class="sim-row">
+        <input type="text" id="testQrInput" placeholder="Enter Test ID (e.g. USER123)" style="padding: 10px; border-radius: 20px; border: 1px solid var(--border-glass); background: var(--bg-card); color: var(--text-primary); text-align: center; width: 220px; box-shadow: var(--shadow-md);">
+        <button onclick="processQR(document.getElementById('testQrInput').value)" class="btn-primary" style="padding: 10px 20px; border-radius: 20px; font-size: 0.9rem; margin: 0;">Simulate Scan</button>
+    </div>
+    <button onclick="resetTestingData()" class="btn-reset" title="Clear all collection history for testing">🔄 Reset History</button>
+</div>
+
+<div class="status" id="statusMsg">Waiting for QR Scan...</div>
+
+<!-- ALLOCATED GRAINS SECTION -->
+<div class="table-wrapper" id="userAllocationBlock" style="display: none;">
+    <div class="table-header">
+        <div style="display:flex; align-items:center; gap: 10px;">
+            <h2>Allocated & Pending Grains</h2>
+        </div>
+        <div class="pct-badge" id="completionPct">0% Completed</div>
+    </div>
+    
+    <table class="grains-table" id="allocTable">
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th>Rice</th>
+                <th>Wheat</th>
+                <th>Sugar</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="font-bold">Allocated</td>
+                <td class="data-cell">20 Kg</td>
+                <td class="data-cell">15 Kg</td>
+                <td class="data-cell">10 Kg</td>
+            </tr>
+            <tr>
+                <td class="font-bold border-bottom">Collected</td>
+                <td class="data-cell border-bottom">0 Kg</td>
+                <td class="data-cell border-bottom">0 Kg</td>
+                <td class="data-cell border-bottom">0 Kg</td>
+            </tr>
+            <tr>
+                <td class="font-bold">Pending</td>
+                <td class="data-cell">20 Kg</td>
+                <td class="data-cell">15 Kg</td>
+                <td class="data-cell">10 Kg</td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <div class="status-legend" id="grainsStatusLegend">
+        <div class="legend-item" id="statusCollected"><span class="circle full"></span> Collected</div>
+        <div class="legend-item" id="statusPartial"><span class="circle partial"></span> Partially Collected</div>
+        <div class="legend-item" id="statusNotCollected"><span class="circle empty"></span> Not Collected</div>
+    </div>
+</div>
+
+<script>
+
+let chamberState = [0, 0, 0]; // Rice, Wheat, Sugar in grams
+let currentScannedId = null;
+let currentRationData = null;
+let port;
+let writer;
+let tableData = [
+    ["0 Kg", "0 Kg", "0 Kg"], // Allocated
+    ["0 Kg", "0 Kg", "0 Kg"], // Collected
+    ["0 Kg", "0 Kg", "0 Kg"]  // Pending
+];
+
+const html5QrCode = new Html5Qrcode("reader");
+
+// Initial Load
+document.addEventListener("DOMContentLoaded", () => {
+    loadChambers();
+    startScanner();
+});
+
+async function loadChambers() {
+    try {
+        const res = await fetch("/api/stock");
+        const stock = await res.json();
+        if (stock) {
+            chamberState[0] = (stock.rice || 0) * 1000;
+            chamberState[1] = (stock.wheat || 0) * 1000;
+            chamberState[2] = (stock.sugar || 0) * 1000;
+            updateChamberUI();
+        }
+    } catch (err) { console.error("Load Stock Error:", err); }
+}
+
+function updateChamberUI() {
+    document.getElementById("riceLevel").innerText = (chamberState[0] / 1000).toFixed(2) + " KG";
+    document.getElementById("wheatLevel").innerText = (chamberState[1] / 1000).toFixed(2) + " KG";
+    document.getElementById("sugarLevel").innerText = (chamberState[2] / 1000).toFixed(2) + " KG";
+}
+
+async function connectSerial(){
+    try {
+        port = await navigator.serial.requestPort();
+        await port.open({ baudRate:115200 });
+        writer = port.writable.getWriter();
+        console.log("ESP32 Connected");
+        alert("ESP32 Connected Successfully!");
+    } catch (err) {
+        console.error("Serial Connection Error:", err);
+        alert("Failed to connect to ESP32.");
+    }
+}
+
+function startScanner(){
+    html5QrCode.start(
+        { facingMode:"environment" },
+        { fps:10, qrbox:250 },
+        qrCodeMessage => { processQR(qrCodeMessage); }
+    ).catch(err => console.error("Scanner Error:", err));
+}
+
+async function processQR(id){
+    id = String(id).trim().toUpperCase();
+    if (id === currentScannedId) return; // Prevent double trigger
+
+    document.getElementById("statusMsg").style.color = "var(--text-secondary)";
+    document.getElementById("statusMsg").innerText = "Verifying QR...";
+
+    try {
+        const res = await fetch(`/api/rations/${id}`);
+        if (!res.ok) {
+            document.getElementById("statusMsg").style.color="red";
+            document.getElementById("statusMsg").innerText="Invalid QR Card!";
+            return;
+        }
+
+        const user = await res.json();
+        currentScannedId = id;
+        currentRationData = user;
+
+        // Populate User Details
+        const detailsBox = document.getElementById("userDetails");
+        detailsBox.style.display="block";
+        detailsBox.classList.add("premium");
+        
+        document.getElementById("name").innerText="👤 Name: " + user.name;
+        document.getElementById("ration").innerText="🪪 Ration ID: " + user.rationId;
+
+        // Quota calculations
+        let reqR = user.quota.rice || 0;
+        let reqW = user.quota.wheat || 0;
+        let reqS = user.quota.sugar || 0;
+
+        let collR = user.collected.rice || 0;
+        let collW = user.collected.wheat || 0;
+        let collS = user.collected.sugar || 0;
+
+        let pendR = Math.max(0, reqR - collR);
+        let pendW = Math.max(0, reqW - collW);
+        let pendS = Math.max(0, reqS - collS);
+
+        // Update Table
+        let f = (n) => (n % 1 === 0 ? n.toString() : n.toFixed(2)) + " Kg";
+        tableData[0] = [f(reqR), f(reqW), f(reqS)];
+        tableData[1] = [f(collR), f(collW), f(collS)];
+        tableData[2] = [f(pendR), f(pendW), f(pendS)];
+        updateTableUI();
+
+        document.getElementById("userAllocationBlock").style.display = "block";
+
+        if (pendR < 0.001 && pendW < 0.001 && pendS < 0.001) {
+            document.getElementById("statusMsg").style.color="red";
+            document.getElementById("statusMsg").innerText="All allocated grains already received!";
+            html5QrCode.pause();
+            setTimeout(() => resetScanner(), 5000);
+            return;
+        }
+
+        // Generate Dispensing Grid
+        let controlsHtml = `
+            <div class="dispense-grid">
+                <div class="dispense-card">
+                    <div style="font-size: 1.5rem;">🍚</div>
+                    <div style="font-weight:700; font-size: 0.9rem;">Rice</div>
+                    <div class="badge-available">Pending: ${pendR.toFixed(2)} Kg</div>
+                    <div class="selection-input-wrapper">
+                        <label>Select Amount</label>
+                        <input type="number" id="dispRice" class="selection-input" value="${pendR.toFixed(2)}" max="${pendR.toFixed(2)}" min="0" step="0.1">
+                    </div>
+                </div>
+                <div class="dispense-card">
+                    <div style="font-size: 1.5rem;">🌾</div>
+                    <div style="font-weight:700; font-size: 0.9rem;">Wheat</div>
+                    <div class="badge-available">Pending: ${pendW.toFixed(2)} Kg</div>
+                    <div class="selection-input-wrapper">
+                        <label>Select Amount</label>
+                        <input type="number" id="dispWheat" class="selection-input" value="${pendW.toFixed(2)}" max="${pendW.toFixed(2)}" min="0" step="0.1">
+                    </div>
+                </div>
+                <div class="dispense-card">
+                    <div style="font-size: 1.5rem;">🧂</div>
+                    <div style="font-weight:700; font-size: 0.9rem;">Sugar</div>
+                    <div class="badge-available">Pending: ${pendS.toFixed(2)} Kg</div>
+                    <div class="selection-input-wrapper">
+                        <label>Select Amount</label>
+                        <input type="number" id="dispSugar" class="selection-input" value="${pendS.toFixed(2)}" max="${pendS.toFixed(2)}" min="0" step="0.1">
+                    </div>
+                </div>
+            </div>
+            <button id="continueBtn" onclick="startDispense()" class="btn-primary" style="margin-top: 20px; width: 100%;">Process Distribution</button>
+        `;
+
+        let gridContainer = document.getElementById("dispenseGridContainer");
+        if(!gridContainer){
+            gridContainer = document.createElement("div");
+            gridContainer.id = "dispenseGridContainer";
+            detailsBox.appendChild(gridContainer);
+        }
+        gridContainer.innerHTML = controlsHtml;
+        
+        // Hide old fields
+        ["rice", "wheat", "sugar"].forEach(id => document.getElementById(id).style.display = "none");
+
+        document.getElementById("statusMsg").style.color="green";
+        document.getElementById("statusMsg").innerText="Card Verified! Select amounts and proceed.";
+        html5QrCode.pause();
+
+    } catch (err) {
+        console.error("Process QR Error:", err);
+        document.getElementById("statusMsg").style.color="red";
+        document.getElementById("statusMsg").innerText="Connection Error!";
+    }
+}
+
+async function startDispense() {
+    const rVal = parseFloat(document.getElementById("dispRice").value) || 0;
+    const wVal = parseFloat(document.getElementById("dispWheat").value) || 0;
+    const sVal = parseFloat(document.getElementById("dispSugar").value) || 0;
+
+    if (rVal === 0 && wVal === 0 && sVal === 0) {
+        alert("Please select at least one item to dispense.");
+        return;
+    }
+
+    // Check machine stock
+    if (rVal > chamberState[0]/1000 || wVal > chamberState[1]/1000 || sVal > chamberState[2]/1000) {
+        alert("Machine has insufficient stock for this request!");
+        return;
+    }
+
+    // Lock UI
+    document.querySelectorAll(".selection-input").forEach(el => el.disabled = true);
+    document.getElementById("continueBtn").disabled = true;
+    document.getElementById("continueBtn").innerText = "Dispensing...";
+    document.getElementById("statusMsg").innerText = "System Engaged... Please wait.";
+
+    try {
+        // 1. Send to Hardware
+        if (writer) {
+            const cmd = `DISPENSE:${rVal.toFixed(2)}:${wVal.toFixed(2)}:${sVal.toFixed(2)}\n`;
+            await writer.write(new TextEncoder().encode(cmd));
+        }
+
+        // 2. Update Database
+        const res = await fetch("/api/collect", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                rationId: currentScannedId,
+                rice: rVal,
+                wheat: wVal,
+                sugar: sVal
+            })
+        });
+
+        if (res.ok) {
+            document.getElementById("statusMsg").innerText = "Dispensing Completed Successfully!";
+            loadChambers(); // Sync stock
+            setTimeout(() => resetScanner(), 3000);
+        } else {
+            throw new Error("Failed to record collection");
+        }
+    } catch (err) {
+        alert("Error during dispensing. Please contact admin.");
+        resetScanner();
+    }
+}
+
+function resetScanner() {
+    currentScannedId = null;
+    currentRationData = null;
+    document.getElementById("userDetails").style.display = "none";
+    document.getElementById("userAllocationBlock").style.display = "none";
+    document.getElementById("statusMsg").innerText = "Waiting for QR Scan...";
+    document.getElementById("statusMsg").style.color = "var(--text-secondary)";
+    html5QrCode.resume();
+}
+
+function updateTableUI() {
+    const cells = document.querySelectorAll("#allocTable td.data-cell");
+    let flatData = [...tableData[0], ...tableData[1], ...tableData[2]];
+    flatData.forEach((val, i) => { if(cells[i]) cells[i].textContent = val; });
+
+    const getNum = (v) => parseFloat(v.replace(/[^\d.]/g, '')) || 0;
+    const allocSum = tableData[0].reduce((s, v) => s + getNum(v), 0);
+    const collSum = tableData[1].reduce((s, v) => s + getNum(v), 0);
+    const pendSum = tableData[2].reduce((s, v) => s + getNum(v), 0);
+    
+    let pct = allocSum > 0 ? Math.round((collSum / allocSum) * 100) : 0;
+    document.getElementById("completionPct").innerText = `${pct}% Completed`;
+    
+    // Status Legend
+    const elCollected = document.getElementById("statusCollected");
+    const elPartial = document.getElementById("statusPartial");
+    const elNotCollected = document.getElementById("statusNotCollected");
+    
+    [elCollected, elPartial, elNotCollected].forEach(el => {
+        if(el) { el.style.opacity = "0.4"; el.style.fontWeight = "normal"; }
+    });
+
+    if (collSum === 0) {
+        if(elNotCollected) { elNotCollected.style.opacity = "1"; elNotCollected.style.fontWeight = "bold"; }
+    } else if (pendSum < 0.01) {
+        if(elCollected) { elCollected.style.opacity = "1"; elCollected.style.fontWeight = "bold"; }
+    } else {
+        if(elPartial) { elPartial.style.opacity = "1"; elPartial.style.fontWeight = "bold"; }
+    }
+}
+
+</script>
+
+</body>
+</html>
