@@ -1,8 +1,8 @@
 // ─────────────────── Toast ───────────────────
 function showToast(message, type = "error") {
     const toast = document.getElementById("toast");
-    const icon  = document.getElementById("toastIcon");
-    const msg   = document.getElementById("toastMsg");
+    const icon = document.getElementById("toastIcon");
+    const msg = document.getElementById("toastMsg");
     if (!toast || !msg) return;
 
     toast.className = `toast ${type}`;
@@ -49,7 +49,7 @@ function toggleLoginMode(mode) {
     const credSection = document.getElementById("credentials-section");
     const otpSection = document.getElementById("otp-section");
     const statusMsg = document.getElementById("otp-status-msg");
-    
+
     if (mode === "otp") {
         credSection.style.display = "none";
         otpSection.style.display = "block";
@@ -71,13 +71,7 @@ async function requestMainLoginOTP() {
         return;
     }
 
-    // Check if user exists with this phone
-    const users = getUsers();
-    const user = users.find(u => u.phone === phone);
-    if (!user) {
-        showToast("No account found with this phone number");
-        return;
-    }
+    /* Local check removed - server will handle this */
 
     setLoading(sendBtn, true);
     if (msgEl) {
@@ -95,11 +89,8 @@ async function requestMainLoginOTP() {
 
         if (res.ok) {
             const otpCode = data.otp || "123456";
-            const waMsg = `Hello ${user.username}! Your RVSM Login code is: ${otpCode}. Valid for 5 mins.`;
-            const waUrl = `https://wa.me/91${phone}?text=${encodeURIComponent(waMsg)}`;
-
             if (msgEl) {
-                msgEl.innerHTML = `Code generated! <a href="${waUrl}" target="_blank" style="color:var(--accent); text-decoration:underline; font-weight:600;">Send from 9361892848</a><br><small style="color:var(--warning);">Valid for 5 minutes</small>`;
+                msgEl.innerHTML = `Code generated! <small style="color:var(--warning);">Valid for 5 minutes</small>`;
                 msgEl.style.color = "var(--success)";
             }
 
@@ -241,7 +232,7 @@ function handleProfileImage(event) {
     }
 
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = function (e) {
         profileImageData = e.target.result;
         const img = document.getElementById("profileImg");
         const placeholder = document.getElementById("profilePlaceholder");
@@ -313,12 +304,7 @@ async function handleSignup() {
         return;
     }
 
-    // Check if username already exists
-    if (findUser(username)) {
-        showToast("This username is already taken. Please choose another.");
-        usernameInput.focus();
-        return;
-    }
+    /* Local uniqueness check removed - server will handle this */
 
     setLoading(signupBtn, true);
 
@@ -326,11 +312,11 @@ async function handleSignup() {
         const res = await fetch("/api/signup", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ 
-                username, 
-                phone, 
-                password, 
-                profileImage: profileImageData 
+            body: JSON.stringify({
+                username,
+                phone,
+                password,
+                profileImage: profileImageData
             })
         });
         const data = await res.json();
