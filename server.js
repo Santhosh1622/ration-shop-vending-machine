@@ -80,11 +80,10 @@ app.post("/send-otp", async (req, res) => {
     try {
         const { mobile } = req.body;
         const user = await User.findOne({ phone: mobile });
-        if (!user) return res.status(404).json({ message: "Not found" });
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         await Otp.findOneAndUpdate({ mobile }, { otp, expiresAt: new Date(Date.now() + 300000) }, { upsert: true });
         console.log(`[OTP] ${mobile}: ${otp}`);
-        res.json({ message: "Sent", otp, username: user.username });
+        res.json({ message: "Sent", otp, username: user ? user.username : "New User" });
     } catch (err) { res.status(500).json({ message: "Error" }); }
 });
 
