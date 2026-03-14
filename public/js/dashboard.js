@@ -105,6 +105,11 @@ function switchTab(viewId, btnElement) {
     if (viewId === 'smartcard-view') {
         renderSmartCardView();
     }
+    
+    // Allocated Grains specific check
+    if (viewId === 'allocated-view') {
+        updateGrainsStatus();
+    }
 
     // Update Page Title
     const titleElement = document.getElementById('pageTitle');
@@ -583,75 +588,134 @@ async function createRationCard() {
     } catch (err) { showToast("Network Error", "error"); }
 }
 
-function renderSmartCardView() {
-    const auth = JSON.parse(sessionStorage.getItem("vm_auth") || "{}");
-    const mobile = auth.phone;
-    
+async function renderSmartCardView() {
     const noCardMsg = document.getElementById("noCardMsg");
     const cardDetailsContainer = document.getElementById("cardDetailsContainer");
     
-    if (!mobile) {
-        noCardMsg.style.display = "block";
-        cardDetailsContainer.style.display = "none";
-        return;
-    }
+    // Show loading or clear old
+    if (cardDetailsContainer) cardDetailsContainer.style.display = "none";
+    if (noCardMsg) noCardMsg.style.display = "none";
 
-    const mapping = JSON.parse(localStorage.getItem("rvsm_mobile_to_ration") || "{}");
-    const rationId = mapping[mobile];
-    
-    if (!rationId) {
-        noCardMsg.style.display = "block";
-        cardDetailsContainer.style.display = "none";
-        return;
-    }
-
-    const rations = JSON.parse(localStorage.getItem("rvsm_rations") || "{}");
-    const data = rations[rationId];
+    const data = await fetchUserRationData();
 
     if (!data) {
-        noCardMsg.style.display = "block";
-        cardDetailsContainer.style.display = "none";
+        if (noCardMsg) noCardMsg.style.display = "block";
         return;
     }
 
-    noCardMsg.style.display = "none";
-    cardDetailsContainer.style.display = "block";
+    if (cardDetailsContainer) cardDetailsContainer.style.display = "block";
 
     // Update Hidden Template
-    document.getElementById("card_head").textContent = data.name;
-    document.getElementById("card_parent").textContent = data.parent;
-    document.getElementById("card_dob").textContent = data.dob;
-    document.getElementById("card_addr").textContent = data.address;
-    document.getElementById("card_ration_id").textContent = data.ration;
+    if (document.getElementById("card_head")) document.getElementById("card_head").textContent = data.name;
+    if (document.getElementById("card_parent")) document.getElementById("card_parent").textContent = data.parentName || "N/A";
+    if (document.getElementById("card_dob")) document.getElementById("card_dob").textContent = data.dob || "N/A";
+    if (document.getElementById("card_addr")) document.getElementById("card_addr").textContent = data.address || "N/A";
+    if (document.getElementById("card_ration_id")) document.getElementById("card_ration_id").textContent = data.rationId;
 
     const membersList = document.getElementById("card_members_list");
-    membersList.innerHTML = "";
-    (data.members || []).forEach((m, idx) => {
-        const li = document.createElement("li");
-        li.textContent = `Member ${idx + 1}: ${m}`;
-        membersList.appendChild(li);
-    });
+    if (membersList) {
+        membersList.innerHTML = "";
+        (data.members || []).forEach((m, idx) => {
+            const li = document.createElement("li");
+            li.textContent = `Member ${idx + 1}: ${m}`;
+            membersList.appendChild(li);
+        });
+    }
 
     // Generate QR in template
     const qrEl = document.getElementById("card_qrcode");
-    qrEl.innerHTML = "";
-    new QRCode(qrEl, {
-        text: data.ration,
-        width: 85,
-        height: 85,
-        colorDark : "#2e7d32",
-        colorLight : "#ffffff",
-        correctLevel : QRCode.CorrectLevel.H
-    });
+    if (qrEl) {
+        qrEl.innerHTML = "";
+        new QRCode(qrEl, {
+            text: data.rationId,
+            width: 85,
+            height: 85,
+            colorDark : "#2e7d32",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.H
+        });
+    }
 
     // Mirror to visual preview (slightly delayed to ensure QR is rendered)
     setTimeout(() => {
         const preview = document.getElementById("visualCardPreview");
-        preview.innerHTML = "";
-        const clone = document.getElementById("smartCardDesign").cloneNode(true);
-        // Important: html2canvas/QRCode.js might need the QR to be actually rendered
-        preview.appendChild(clone);
-    }, 100);
+        if (preview) {
+            preview.innerHTML = "";
+            const designTemplate = document.getElementById("smartCardDesign");
+            if (designTemplate) {
+                const clone = designTemplate.cloneNode(true);
+                preview.appendChild(clone);
+            }
+        }
+    }, 200);
+}
+
+async function fetchUserRationData() {
+    const auth = JSON.parse(sessionStorage.getItem("vm_auth") || "{}");
+    const mobile = auth.phone;
+    if (!mobile) return null;
+
+    try {
+        const res = await fetch(`/api/rations/mobile/${mobile}`);
+        if (res.ok) return await res.json();
+    } catch (err) { console.error("Fetch Ration Error:", err); }
+    return null;
+}
+
+async function updateGrainsStatus() {
+    const data = await fetchUserRationData();
+    const tableBody = document.querySelector("#allocated-view .grains-table tbody");
+    if (!tableBody || !data) return;
+
+    const quota = data.quota || { rice: 0, wheat: 0, sugar: 0 };
+    const coll = data.collected || { rice: 0, wheat: 0, sugar: 0 };
+    
+    const pend = {
+        rice: Math.max(0, quota.rice - coll.rice),
+        wheat: Math.max(0, quota.wheat - coll.wheat),
+        sugar: Math.max(0, quota.sugar - coll.sugar)
+    };
+
+    const fmt = (n) => (n % 1 === 0 ? n.toString() : n.toFixed(1)) + " Kg";
+
+    tableBody.innerHTML = `
+        <tr>
+            <td class="font-bold">Allocated</td>
+            <td>${fmt(quota.rice)}</td>
+            <td>${fmt(quota.wheat)}</td>
+            <td>${fmt(quota.sugar)}</td>
+        </tr>
+        <tr>
+            <td class="font-bold border-bottom">Collected</td>
+            <td class="border-bottom">${fmt(coll.rice)}</td>
+            <td class="border-bottom">${fmt(coll.wheat)}</td>
+            <td class="border-bottom">${fmt(coll.sugar)}</td>
+        </tr>
+        <tr>
+            <td class="font-bold">Pending</td>
+            <td style="color:var(--accent); font-weight:700;">${fmt(pend.rice)}</td>
+            <td style="color:var(--accent); font-weight:700;">${fmt(pend.wheat)}</td>
+            <td style="color:var(--accent); font-weight:700;">${fmt(pend.sugar)}</td>
+        </tr>
+    `;
+    
+    // Update legend highlights
+    const totalAlloc = quota.rice + quota.wheat + quota.sugar;
+    const totalColl = coll.rice + coll.wheat + coll.sugar;
+    
+    const elCollected = document.getElementById("statusCollected");
+    const elPartial = document.getElementById("statusPartial");
+    const elNotCollected = document.getElementById("statusNotCollected");
+    
+    [elCollected, elPartial, elNotCollected].forEach(el => { if(el) { el.style.opacity = "0.4"; el.style.fontWeight = "normal"; } });
+
+    if (totalColl >= totalAlloc && totalAlloc > 0) {
+        if(elCollected) { elCollected.style.opacity = "1"; elCollected.style.fontWeight = "bold"; }
+    } else if (totalColl > 0) {
+        if(elPartial) { elPartial.style.opacity = "1"; elPartial.style.fontWeight = "bold"; }
+    } else {
+        if(elNotCollected) { elNotCollected.style.opacity = "1"; elNotCollected.style.fontWeight = "bold"; }
+    }
 }
 
 /** Bulletproof Iframe Export System v7.0 (2026-03-14) **/

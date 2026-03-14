@@ -168,6 +168,14 @@ app.get("/api/rations/:id", async (req, res) => {
     } catch (err) { res.status(500).json({ message: "Error" }); }
 });
 
+app.get("/api/rations/mobile/:mobile", async (req, res) => {
+    try {
+        const ration = await RationCard.findOne({ mobile: req.params.mobile });
+        if (!ration) return res.status(404).json({ message: "No Ration Card linked to this mobile" });
+        res.json(ration);
+    } catch (err) { res.status(500).json({ message: "Error" }); }
+});
+
 app.post("/api/rations", async (req, res) => {
     try {
         const data = req.body;
