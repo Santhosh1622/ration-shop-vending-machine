@@ -596,10 +596,17 @@ async function renderSmartCardView() {
     if (cardDetailsContainer) cardDetailsContainer.style.display = "none";
     if (noCardMsg) noCardMsg.style.display = "none";
 
-    const data = await fetchUserRationData();
-
     if (!data) {
-        if (noCardMsg) noCardMsg.style.display = "block";
+        if (noCardMsg) {
+            const auth = JSON.parse(sessionStorage.getItem("vm_auth") || "{}");
+            const mobile = auth.phone || "Unknown";
+            noCardMsg.innerHTML = `
+                <p style="color: var(--text-muted); font-size: 1.1rem; margin-bottom: 10px;">No ration card linked to: <b>${mobile}</b></p>
+                <p style="font-size: 0.9rem; margin-bottom: 25px;">Please verify this matches the number used during registration.</p>
+                <button class="btn-outline admin-only" onclick="switchTab('ration-registration', document.querySelector('[onclick*=\\\'ration-registration\\\']'))" style="margin-top: 20px; border-color: var(--warning); color: var(--warning);">Register Ration Card</button>
+            `;
+            noCardMsg.style.display = "block";
+        }
         return;
     }
 
@@ -652,13 +659,24 @@ async function renderSmartCardView() {
 
 async function fetchUserRationData() {
     const auth = JSON.parse(sessionStorage.getItem("vm_auth") || "{}");
-    const mobile = auth.phone;
-    if (!mobile) return null;
+    const mobile = auth.phone ? auth.phone.toString().trim() : "";
+    console.log(`[CLIENT-DEBUG] Attempting to fetch ration for mobile: "${mobile}"`);
+    
+    if (!mobile) {
+        console.warn("[CLIENT-DEBUG] No mobile found in session!");
+        return null;
+    }
 
     try {
         const res = await fetch(`/api/rations/mobile/${mobile}`);
-        if (res.ok) return await res.json();
-    } catch (err) { console.error("Fetch Ration Error:", err); }
+        if (res.ok) {
+            const data = await res.json();
+            console.log("[CLIENT-DEBUG] Ration data received:", data);
+            return data;
+        } else {
+            console.warn(`[CLIENT-DEBUG] Server returned ${res.status} for ${mobile}`);
+        }
+    } catch (err) { console.error("[CLIENT-DEBUG] Fetch Error:", err); }
     return null;
 }
 

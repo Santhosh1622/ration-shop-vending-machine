@@ -170,10 +170,26 @@ app.get("/api/rations/:id", async (req, res) => {
 
 app.get("/api/rations/mobile/:mobile", async (req, res) => {
     try {
-        const ration = await RationCard.findOne({ mobile: req.params.mobile });
-        if (!ration) return res.status(404).json({ message: "No Ration Card linked to this mobile" });
+        let queryMobile = req.params.mobile.trim();
+        // Normalize: Remove +91 or leading 0 to match database format
+        queryMobile = queryMobile.replace(/^\+91/, '').replace(/^0/, '');
+        
+        console.log(`[RATION-FETCH] Normalizing "${req.params.mobile}" -> "${queryMobile}"`);
+        
+        // Search for both exact and normalized
+        const ration = await RationCard.findOne({ 
+            $or: [{ mobile: queryMobile }, { mobile: req.params.mobile.trim() }] 
+        });
+
+        if (!ration) {
+            console.log(`[RATION-FETCH] No card found for: "${queryMobile}"`);
+            return res.status(404).json({ message: "No Ration Card linked to this mobile" });
+        }
         res.json(ration);
-    } catch (err) { res.status(500).json({ message: "Error" }); }
+    } catch (err) { 
+        console.error("[RATION-FETCH] Error:", err);
+        res.status(500).json({ message: "Error" }); 
+    }
 });
 
 app.post("/api/rations", async (req, res) => {
