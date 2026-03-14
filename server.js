@@ -90,24 +90,32 @@ app.post("/send-otp", async (req, res) => {
 app.post("/verify-otp", async (req, res) => {
     try {
         const { mobile, otp } = req.body;
-        console.log(`[VERIFY] Try: ${mobile} | Code: ${otp}`);
-        const stored = await Otp.findOne({ mobile });
+        const cleanMobile = mobile.toString().trim();
+        const cleanOtp = otp.toString().trim().replace(/\s/g, '');
+
+        console.log(`[VERIFY-DEBUG] Searching for Mobile: "${cleanMobile}" | Provided Code: "${cleanOtp}"`);
         
-        if (stored && stored.otp.trim() === otp.trim()) {
-            await Otp.deleteOne({ mobile });
-            const user = await User.findOne({ phone: mobile });
-            
-            if (user) {
-                return res.json({ user: { username: user.username, phone: user.phone, profileImage: user.profileImage } });
-            } else {
-                // Return a temporary user object for login success even if not in DB
-                return res.json({ user: { username: "Guest User", phone: mobile, profileImage: "" } });
+        const stored = await Otp.findOne({ mobile: cleanMobile });
+        
+        if (stored) {
+            console.log(`[VERIFY-DEBUG] Found Stored Code: "${stored.otp}"`);
+            if (stored.otp.trim() === cleanOtp) {
+                await Otp.deleteOne({ mobile: cleanMobile });
+                const user = await User.findOne({ phone: cleanMobile });
+                
+                console.log(`[VERIFY-SUCCESS] Mobile: ${cleanMobile}`);
+                if (user) {
+                    return res.json({ user: { username: user.username, phone: user.phone, profileImage: user.profileImage } });
+                } else {
+                    return res.json({ user: { username: "Guest User", phone: cleanMobile, profileImage: "" } });
+                }
             }
         }
-        console.log(`[VERIFY] Failed: ${mobile} | Stored: ${stored ? stored.otp : "None"}`);
+        
+        console.log(`[VERIFY-FAIL] Mobile: ${cleanMobile} | Match Failed`);
         res.status(400).json({ message: "Invalid" });
     } catch (err) { 
-        console.error("[VERIFY] Error:", err);
+        console.error("[VERIFY-ERROR]:", err);
         res.status(500).json({ message: "Error" }); 
     }
 });

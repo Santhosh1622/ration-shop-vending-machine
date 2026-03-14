@@ -113,7 +113,7 @@ async function requestMainLoginOTP() {
 
 async function verifyMainLoginOTP() {
     const phone = document.getElementById("loginPhone").value.trim();
-    const otp = document.getElementById("loginOtp").value.trim();
+    const otp = document.getElementById("loginOtp").value.trim().replace(/\s/g, '');
     const verifyBtn = document.getElementById("verifyOtpBtn");
 
     if (!otp) {
